@@ -12,6 +12,5 @@ Full and empty flag detection
 Synchronous write and read operations
 
 🔧 Files Included
-File Name	Description
 fifo.v	Main FIFO module (RTL)
 fifo_tb.v	Testbench for simulating FIFO
