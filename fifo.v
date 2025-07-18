@@ -13,32 +13,39 @@ module fifo #(
     output wire empty
 );
 
-    localparam fifo_depth_log=$clog2(fifo_depth);
+    localparam fifo_depth_log = $clog2(fifo_depth);
+
+    // FIFO memory
     reg [data_width-1:0] fifo [0:fifo_depth-1];
-    reg [fifo_depth_log:0] wr_ptr = 0;
-    reg [fifo_depth_log:0] rd_ptr = 0;
-    reg [$clog2(DEPTH+1):0] count = 0;
 
-    assign full = (count == DEPTH);
-    assign empty = (count == 0);
+    // Read and write pointers with 1 extra bit for full/empty detection
+    reg [fifo_depth_log:0] wr_ptr;
+    reg [fifo_depth_log:0] rd_ptr;
 
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
+    // WRITE logic
+    always @(posedge clk or negedge rst) begin
+        if (!rst)
             wr_ptr <= 0;
-            rd_ptr <= 0;
-            count <= 0;
-        end else begin
-            if (wr_en && !full) begin
-                mem[wr_ptr] <= din;
-                wr_ptr <= wr_ptr + 1;
-                count <= count + 1;
-            end
-            if (rd_en && !empty) begin
-                dout <= mem[rd_ptr];
-                rd_ptr <= rd_ptr + 1;
-                count <= count - 1;
-            end
+        else if (cs && wr_en && !full) begin
+            fifo[wr_ptr[fifo_depth_log-1:0]] <= din;
+            wr_ptr <= wr_ptr + 1'b1;
         end
     end
 
+    // READ logic
+    always @(posedge clk or negedge rst) begin
+        if (!rst)
+            rd_ptr <= 0;
+        else if (cs && rd_en && !empty) begin
+            dout <= fifo[rd_ptr[fifo_depth_log-1:0]];
+            rd_ptr <= rd_ptr + 1'b1;
+        end
+    end
+
+    // FIFO status
+    assign empty = (rd_ptr == wr_ptr);
+    assign full  = (rd_ptr == {~wr_ptr[fifo_depth_log], wr_ptr[fifo_depth_log-1:0]});
+
+endmodule
+    
 endmodule
