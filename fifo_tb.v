@@ -68,13 +68,13 @@ module tb_fifo();
   initial begin
       // Initial reset
       #1;
-      rst_n = 0;
+      rst = 0;
       wr_en = 0;
       rd_en = 0;
       cs = 0;
 
       @(posedge clk)
-      rst_n = 1;
+      rst = 1;
 
       $display("%0t: scenario 1", $time);
       write_data(1);
