@@ -7,7 +7,7 @@ module tb_fifo();
 
   // Testbench signals
   reg clk = 0;
-  reg rst_n;
+  reg rst;
   reg cs;
   reg wr_en;
   reg rd_en;
@@ -24,7 +24,7 @@ module tb_fifo();
       .DATA_WIDTH(DATA_WIDTH)
   ) dut (
       .clk(clk),
-      .rst_n(rst_n),
+      .rst(rst),
       .cs(cs),
       .wr_en(wr_en),
       .rd_en(rd_en),
