@@ -1,51 +1,112 @@
-`timescale 1ns / 1ps
-module fifo_tb;
+`timescale 1ns/1ns
+module tb_fifo();
 
-    parameter DATA_WIDTH = 8;
-    parameter DEPTH = 4;
+  // Parameters
+  parameter FIFO_DEPTH = 8;
+  parameter DATA_WIDTH = 32;
 
-    reg clk = 0;
-    reg rst;
-    reg wr_en;
-    reg rd_en;
-    reg [DATA_WIDTH-1:0] din;
-    wire [DATA_WIDTH-1:0] dout;
-    wire full, empty;
+  // Testbench signals
+  reg clk = 0;
+  reg rst_n;
+  reg cs;
+  reg wr_en;
+  reg rd_en;
+  reg [DATA_WIDTH-1:0] data_in;
+  wire [DATA_WIDTH-1:0] data_out;
+  wire empty;
+  wire full;
 
-    fifo #(.DATA_WIDTH(DATA_WIDTH), .DEPTH(DEPTH)) uut (
-        .clk(clk), .rst(rst),
-        .wr_en(wr_en), .rd_en(rd_en),
-        .din(din), .dout(dout),
-        .full(full), .empty(empty)
-    );
+  integer i;
 
-    always #5 clk = ~clk;
+  // Instantiate the FIFO design
+  fifo #(
+      .FIFO_DEPTH(FIFO_DEPTH),
+      .DATA_WIDTH(DATA_WIDTH)
+  ) dut (
+      .clk(clk),
+      .rst_n(rst_n),
+      .cs(cs),
+      .wr_en(wr_en),
+      .rd_en(rd_en),
+      .data_in(data_in),
+      .data_out(data_out),
+      .empty(empty),
+      .full(full)
+  );
 
-    initial begin
-        $dumpfile("fifo.vcd");
-        $dumpvars(0, fifo_tb);
+  // Clock generation
+  always begin
+      #5 clk = ~clk;  // 10ns clock period
+  end
 
-        rst = 1; wr_en = 0; rd_en = 0; din = 0;
-        #10 rst = 0;
+  // Task to write data into FIFO
+  task write_data(input [DATA_WIDTH-1:0] d_in);
+      begin
+          @(posedge clk);
+          cs = 1;
+          wr_en = 1;
+          data_in = d_in;
+          @(posedge clk);
+          wr_en = 0;
+          cs = 1;
+      end
+  endtask
 
-        // Write data
-        repeat (DEPTH) begin
-            @(posedge clk);
-            wr_en = 1; rd_en = 0; din = $random;
-        end
+  // Task to read data from FIFO
+  task read_data();
+      begin
+          @(posedge clk);
+          cs = 1;
+          rd_en = 1;
+          @(posedge clk);
+          rd_en = 0;
+          cs = 1;
+      end
+  endtask
 
-        // Try writing when full
-        @(posedge clk);
-        wr_en = 1; din = 8'hAA;
+  // Main stimulus block
+  initial begin
+      // Initial reset
+      #1;
+      rst_n = 0;
+      wr_en = 0;
+      rd_en = 0;
+      cs = 0;
 
-        // Read all data
-        repeat (DEPTH+1) begin
-            @(posedge clk);
-            wr_en = 0; rd_en = 1;
-        end
+      @(posedge clk)
+      rst_n = 1;
 
-        @(posedge clk);
-        $finish;
-    end
+      $display("%0t: scenario 1", $time);
+      write_data(1);
+      write_data(10);
+      write_data(100);
+      read_data();
+      read_data();
+      read_data();
+
+      $display("%0t: scenario 2", $time);
+      for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
+          write_data(2**i);
+          read_data();
+      end
+
+      $display("%0t: scenario 3", $time);
+      for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
+          write_data(2**i);
+      end
+
+      for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
+          read_data();
+      end
+
+      #40;
+      $finish;
+  end
+
+  // Dump VCD file
+  initial begin
+      $dumpfile("dump.vcd");
+      $dumpvars;
+  end
 
 endmodule
