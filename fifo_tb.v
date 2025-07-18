@@ -11,8 +11,8 @@ module tb_fifo();
   reg cs;
   reg wr_en;
   reg rd_en;
-  reg [DATA_WIDTH-1:0] data_in;
-  wire [DATA_WIDTH-1:0] data_out;
+  reg [DATA_WIDTH-1:0] din;
+  wire [DATA_WIDTH-1:0] dout;
   wire empty;
   wire full;
 
@@ -28,8 +28,8 @@ module tb_fifo();
       .cs(cs),
       .wr_en(wr_en),
       .rd_en(rd_en),
-      .data_in(data_in),
-      .data_out(data_out),
+      .din(din),
+      .dout(dout),
       .empty(empty),
       .full(full)
   );
